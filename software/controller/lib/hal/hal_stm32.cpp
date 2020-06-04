@@ -36,6 +36,7 @@ Abbreviations [RM], [DS], etc are defined in hal/README.md.
 #include "hal.h"
 #include "stepper.h"
 #include "uart_dma.h"
+#include "framing_spec_chars.h"
 #include "vars.h"
 
 #define SYSTEM_STACK_SIZE 2500
@@ -580,11 +581,12 @@ class UART {
   uint16_t TxFree() { return static_cast<uint16_t>(tx_data_.FreeCount()); }
 };
 
-static UART rpi_uart(Uart3Base);
 static UART debug_uart(Uart2Base);
-#ifdef UART_VIA_DMA
-extern UartDma dma_uart;
-#endif
+static constexpr uint8_t txCh{1};
+static constexpr uint8_t rxCh{2};
+UartDma uart_dma(Uart3Base, Dma1Base, txCh, rxCh, FramingMark);
+DmaCtrl dmaController(Dma1Base);
+
 // The UART that talks to the rPi uses the following pins:
 //    PB10 - TX
 //    PB11 - RX
@@ -608,9 +610,8 @@ void HalApi::InitUARTs() {
   //        Need to do that as soon as the boards are available.
   EnableClock(Uart2Base);
   EnableClock(Uart3Base);
-#ifdef UART_VIA_DMA
   EnableClock(Dma1Base);
-#endif
+
   GpioPinAltFunc(GpioABase, 2, 7);
   GpioPinAltFunc(GpioABase, 3, 7);
 
@@ -619,11 +620,8 @@ void HalApi::InitUARTs() {
   GpioPinAltFunc(GpioBBase, 13, 7);
   GpioPinAltFunc(GpioBBase, 14, 7);
 
-#ifdef UART_VIA_DMA
-  dma_uart.Init(115200);
-#else
-  rpi_uart.Init(115200);
-#endif
+  uart_dma.init(115200);
+  dmaController.init();
   debug_uart.Init(115200);
 
   EnableInterrupt(InterruptVector::Dma1Channel2, IntPriority::Standard);
@@ -634,19 +632,9 @@ void HalApi::InitUARTs() {
 
 static void Uart2ISR() { debug_uart.ISR(); }
 
-#ifndef UART_VIA_DMA
-void Uart3ISR() { rpi_uart.ISR(); }
-#endif
-
-uint16_t HalApi::SerialRead(char *buf, uint16_t len) { return rpi_uart.Read(buf, len); }
-
-uint16_t HalApi::SerialBytesAvailableForRead() { return rpi_uart.RxFull(); }
-
-uint16_t HalApi::SerialWrite(const char *buf, uint16_t len) { return rpi_uart.Write(buf, len); }
-
-uint16_t HalApi::SerialBytesAvailableForWrite() { return rpi_uart.TxFree(); }
-
-uint16_t HalApi::DebugWrite(const char *buf, uint16_t len) { return debug_uart.Write(buf, len); }
+uint16_t HalApi::DebugWrite(const char *buf, uint16_t len) {
+  return debug_uart.Write(buf, len);
+}
 
 uint16_t HalApi::DebugRead(char *buf, uint16_t len) { return debug_uart.Read(buf, len); }
 
@@ -808,110 +796,105 @@ __attribute__((used)) __attribute__((section(".isr_vector"))) void (*const Vecto
 
     // The rest of the table is a list of exception and interrupt handlers.
     // [RM] chapter 12 (NVIC) gives a listing of the vector table offsets.
-    NMI,            //   2 - 0x008 The NMI handler
-    FaultISR,       //   3 - 0x00C The hard fault handler
-    MPUFaultISR,    //   4 - 0x010 The MPU fault handler
-    BusFaultISR,    //   5 - 0x014 The bus fault handler
-    UsageFaultISR,  //   6 - 0x018 The usage fault handler
-    BadISR,         //   7 - 0x01C Reserved
-    BadISR,         //   8 - 0x020 Reserved
-    BadISR,         //   9 - 0x024 Reserved
-    BadISR,         //  10 - 0x028 Reserved
-    BadISR,         //  11 - 0x02C SVCall handler
-    BadISR,         //  12 - 0x030 Debug monitor handler
-    BadISR,         //  13 - 0x034 Reserved
-    BadISR,         //  14 - 0x038 The PendSV handler
-    BadISR,         //  15 - 0x03C SysTick
-    BadISR,         //  16 - 0x040
-    BadISR,         //  17 - 0x044
-    BadISR,         //  18 - 0x048
-    BadISR,         //  19 - 0x04C
-    BadISR,         //  20 - 0x050
-    BadISR,         //  21 - 0x054
-    BadISR,         //  22 - 0x058
-    BadISR,         //  23 - 0x05C
-    BadISR,         //  24 - 0x060
-    BadISR,         //  25 - 0x064
-    BadISR,         //  26 - 0x068
-    BadISR,         //  27 - 0x06C
-#ifdef UART_VIA_DMA
-    DMA1Channel2ISR,  //  28 - 0x070 DMA1 CH2
-    DMA1Channel3ISR,  //  29 - 0x074 DMA1 CH3
-#else
-    BadISR,  //  28 - 0x070
-    BadISR,  //  29 - 0x074
-#endif
-    BadISR,           //  30 - 0x078
-    BadISR,           //  31 - 0x07C
-    BadISR,           //  32 - 0x080
-    BadISR,           //  33 - 0x084
-    BadISR,           //  34 - 0x088
-    BadISR,           //  35 - 0x08C
-    BadISR,           //  36 - 0x090
-    BadISR,           //  37 - 0x094
-    BadISR,           //  38 - 0x098
-    BadISR,           //  39 - 0x09C
-    Timer15ISR,       //  40 - 0x0A0
-    BadISR,           //  41 - 0x0A4
-    BadISR,           //  42 - 0x0A8
-    BadISR,           //  43 - 0x0AC
-    BadISR,           //  44 - 0x0B0
-    BadISR,           //  45 - 0x0B4
-    BadISR,           //  46 - 0x0B8
-    I2c1EventISR,     //  47 - 0x0BC I2C1 Events
-    I2c1ErrorISR,     //  48 - 0x0C0 I2C1 Errors
-    BadISR,           //  49 - 0x0C4
-    BadISR,           //  50 - 0x0C8
-    BadISR,           //  51 - 0x0CC
-    BadISR,           //  52 - 0x0D0
-    BadISR,           //  53 - 0x0D4
-    Uart2ISR,         //  54 - 0x0D8
-    Uart3ISR,         //  55 - 0x0DC
-    BadISR,           //  56 - 0x0E0
-    BadISR,           //  57 - 0x0E4
-    BadISR,           //  58 - 0x0E8
-    BadISR,           //  59 - 0x0EC
-    BadISR,           //  60 - 0x0F0
-    BadISR,           //  61 - 0x0F4
-    BadISR,           //  62 - 0x0F8
-    BadISR,           //  63 - 0x0FC
-    BadISR,           //  64 - 0x100
-    BadISR,           //  65 - 0x104
-    BadISR,           //  66 - 0x108
-    BadISR,           //  67 - 0x10C
-    BadISR,           //  68 - 0x110
-    BadISR,           //  69 - 0x114
-    Timer6ISR,        //  70 - 0x118
-    BadISR,           //  71 - 0x11C
-    BadISR,           //  72 - 0x120
-    BadISR,           //  73 - 0x124
-    StepperISR,       //  74 - 0x128
-    BadISR,           //  75 - 0x12C
-    BadISR,           //  76 - 0x130
-    BadISR,           //  77 - 0x134
-    BadISR,           //  78 - 0x138
-    BadISR,           //  79 - 0x13C
-    BadISR,           //  80 - 0x140
-    BadISR,           //  81 - 0x144
-    BadISR,           //  82 - 0x148
-    BadISR,           //  83 - 0x14C
-    DMA2Channel6ISR,  //  84 - 0x150
-    DMA2Channel7ISR,  //  85 - 0x154
-    BadISR,           //  86 - 0x158
-    BadISR,           //  87 - 0x15C
-    BadISR,           //  88 - 0x160
-    BadISR,           //  89 - 0x164
-    BadISR,           //  90 - 0x168
-    BadISR,           //  91 - 0x16C
-    BadISR,           //  92 - 0x170
-    BadISR,           //  93 - 0x174
-    BadISR,           //  94 - 0x178
-    BadISR,           //  95 - 0x17C
-    BadISR,           //  96 - 0x180
-    BadISR,           //  97 - 0x184
-    BadISR,           //  98 - 0x188
-    BadISR,           //  99 - 0x18C
-    BadISR,           // 100 - 0x190
+    NMI,           //   2 - 0x008 The NMI handler
+    FaultISR,      //   3 - 0x00C The hard fault handler
+    MPUFaultISR,   //   4 - 0x010 The MPU fault handler
+    BusFaultISR,   //   5 - 0x014 The bus fault handler
+    UsageFaultISR, //   6 - 0x018 The usage fault handler
+    BadISR,        //   7 - 0x01C Reserved
+    BadISR,        //   8 - 0x020 Reserved
+    BadISR,        //   9 - 0x024 Reserved
+    BadISR,        //  10 - 0x028 Reserved
+    BadISR,        //  11 - 0x02C SVCall handler
+    BadISR,        //  12 - 0x030 Debug monitor handler
+    BadISR,        //  13 - 0x034 Reserved
+    BadISR,        //  14 - 0x038 The PendSV handler
+    BadISR,        //  15 - 0x03C SysTick
+    BadISR,        //  16 - 0x040
+    BadISR,        //  17 - 0x044
+    BadISR,        //  18 - 0x048
+    BadISR,        //  19 - 0x04C
+    BadISR,        //  20 - 0x050
+    BadISR,        //  21 - 0x054
+    BadISR,        //  22 - 0x058
+    BadISR,        //  23 - 0x05C
+    BadISR,        //  24 - 0x060
+    BadISR,        //  25 - 0x064
+    BadISR,        //  26 - 0x068
+    BadISR,        //  27 - 0x06C
+    DMA1Channel2ISR, //  28 - 0x070 DMA1 CH2
+    DMA1Channel3ISR, //  29 - 0x074 DMA1 CH3
+    BadISR,          //  30 - 0x078
+    BadISR,          //  31 - 0x07C
+    BadISR,          //  32 - 0x080
+    BadISR,          //  33 - 0x084
+    BadISR,          //  34 - 0x088
+    BadISR,          //  35 - 0x08C
+    BadISR,          //  36 - 0x090
+    BadISR,          //  37 - 0x094
+    BadISR,          //  38 - 0x098
+    BadISR,          //  39 - 0x09C
+    Timer15ISR,      //  40 - 0x0A0
+    BadISR,          //  41 - 0x0A4
+    BadISR,          //  42 - 0x0A8
+    BadISR,          //  43 - 0x0AC
+    BadISR,          //  44 - 0x0B0
+    BadISR,          //  45 - 0x0B4
+    BadISR,          //  46 - 0x0B8
+    I2c1EventISR,    //  47 - 0x0BC I2C1 Events
+    I2c1ErrorISR,    //  48 - 0x0C0 I2C1 Errors
+    BadISR,          //  49 - 0x0C4
+    BadISR,          //  50 - 0x0C8
+    BadISR,          //  51 - 0x0CC
+    BadISR,          //  52 - 0x0D0
+    BadISR,          //  53 - 0x0D4
+    Uart2ISR,        //  54 - 0x0D8
+    Uart3ISR,        //  55 - 0x0DC
+    BadISR,          //  56 - 0x0E0
+    BadISR,          //  57 - 0x0E4
+    BadISR,          //  58 - 0x0E8
+    BadISR,          //  59 - 0x0EC
+    BadISR,          //  60 - 0x0F0
+    BadISR,          //  61 - 0x0F4
+    BadISR,          //  62 - 0x0F8
+    BadISR,          //  63 - 0x0FC
+    BadISR,          //  64 - 0x100
+    BadISR,          //  65 - 0x104
+    BadISR,          //  66 - 0x108
+    BadISR,          //  67 - 0x10C
+    BadISR,          //  68 - 0x110
+    BadISR,          //  69 - 0x114
+    Timer6ISR,       //  70 - 0x118
+    BadISR,          //  71 - 0x11C
+    BadISR,          //  72 - 0x120
+    BadISR,          //  73 - 0x124
+    StepperISR,      //  74 - 0x128
+    BadISR,          //  75 - 0x12C
+    BadISR,          //  76 - 0x130
+    BadISR,          //  77 - 0x134
+    BadISR,          //  78 - 0x138
+    BadISR,          //  79 - 0x13C
+    BadISR,          //  80 - 0x140
+    BadISR,          //  81 - 0x144
+    BadISR,          //  82 - 0x148
+    BadISR,          //  83 - 0x14C
+    DMA2Channel6ISR, //  84 - 0x150
+    DMA2Channel7ISR, //  85 - 0x154
+    BadISR,          //  86 - 0x158
+    BadISR,          //  87 - 0x15C
+    BadISR,          //  88 - 0x160
+    BadISR,          //  89 - 0x164
+    BadISR,          //  90 - 0x168
+    BadISR,          //  91 - 0x16C
+    BadISR,          //  92 - 0x170
+    BadISR,          //  93 - 0x174
+    BadISR,          //  94 - 0x178
+    BadISR,          //  95 - 0x17C
+    BadISR,          //  96 - 0x180
+    BadISR,          //  97 - 0x184
+    BadISR,          //  98 - 0x188
+    BadISR,          //  99 - 0x18C
+    BadISR,          // 100 - 0x190
 };
 
 // Enable an interrupt with a specified priority (0 to 15)

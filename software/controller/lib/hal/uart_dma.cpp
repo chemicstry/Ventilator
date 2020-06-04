@@ -14,7 +14,7 @@ limitations under the License.
 
 */
 
-#if defined(BARE_STM32) && defined(UART_VIA_DMA)
+#if defined(BARE_STM32)
 
 #include "uart_dma.h"
 
