@@ -1,17 +1,34 @@
+/* Copyright 2020-2021, RespiraWorks
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/
+
 #include "checksum.h"
 #include "chrono.h"
 #include "connected_device.h"
-#include "logger.h"
 #include "frame_detector.h"
 #include "framing.h"
+#include "logger.h"
 #include "network_protocol.pb.h"
 #include "pb_common.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "proto_traits.h"
+#include "qserial_output_stream.h"
 #include "soft_rx_buffer.h"
-#include <QSerialPort>
 #include <QDataStream>
+#include <QSerialPort>
 #include <memory>
 
 // Connects to system serial port, does nanopb serialization/deserialization
@@ -84,7 +101,7 @@ public:
   bool SendGuiStatus(const GuiStatus &gui_status) override {
     if (!createPortMaybe()) {
       CRIT("Could not open serial port for sending {}",
-         serialPortName_.toStdString());
+           serialPortName_.toStdString());
       // TODO Raise an Alert?
       return false;
     }
@@ -145,7 +162,8 @@ public:
           DecodeControllerStatusFrame(buf, len, controller_status);
 
       if (DecodeResult::Success != result) {
-        CRIT("Could not decode received data as a frame, error code: {}", result);
+        CRIT("Could not decode received data as a frame, error code: {}",
+             result);
         // TODO: Raise an Alert?
         return false;
       }

@@ -13,11 +13,14 @@ set -o xtrace
 # This script should work no matter where you call it from.
 cd "$(dirname "$0")"
 
+EXIT_FAILURE=1
+EXIT_SUCCESS=0
+
 # Check if Darwin or Linux
 PLATFORM="$(uname -s)"
 if [ $PLATFORM != "Darwin" ] && [ $PLATFORM != "Linux" ]; then
   echo "Error: This script only supports 'Darwin' or 'Linux'. You have $PLATFORM."
-  exit 1
+  exit $EXIT_FAILURE
 fi
 
 
@@ -89,7 +92,7 @@ if [ "$1" == "--install" ]; then
   if [ "$PLATFORM" == "Linux" ]; then
     if [ "$EUID" -ne 0 ]; then
       echo "Please run install with root privileges!"
-      exit 1
+      exit $EXIT_FAILURE
     fi
 
     apt-get update &&
@@ -118,7 +121,7 @@ if [ "$1" == "--install" ]; then
 	      cppcheck \
 	      clang-tidy
   fi
-  exit 0
+  exit $EXIT_SUCCESS
 fi
 
 #########
@@ -129,7 +132,7 @@ if [ "$1" == "--clean" ]; then
   clean_dir build
   qmake -unset QMAKEFEATURES
   git submodule deinit .
-  exit 0
+  exit $EXIT_SUCCESS
 fi
 
 #########
@@ -139,7 +142,7 @@ if [ "$1" == "--build" ]; then
 
   if [ "$EUID" -eq 0 ] && [ "$2" != "-f" ]; then
     echo "Please do not run build with root privileges!"
-    exit 1
+    exit $EXIT_FAILURE
   fi
 
   create_clean_directory build
@@ -178,7 +181,7 @@ if [ "$1" == "--build" ]; then
   fi
 
   popd
-  exit 0
+  exit $EXIT_SUCCESS
 fi
 
 
@@ -190,7 +193,7 @@ if [ "$1" == "--test" ]; then
 
   if [ "$EUID" -eq 0 ] && [ "$2" != "-f" ]; then
     echo "Please do not run tests with root privileges!"
-    exit 1
+    exit $EXIT_FAILURE
   fi
 
   pushd build
@@ -207,7 +210,7 @@ if [ "$1" == "--test" ]; then
     fi
   fi
   popd
-  exit 0
+  exit $EXIT_SUCCESS
 fi
 
 
@@ -219,22 +222,22 @@ if [ "$1" == "--run" ]; then
 
   if [ "$EUID" -eq 0 ] && [ "$2" != "-f" ]; then
     echo "Please do not run the app with root privileges!"
-    exit 1
+    exit $EXIT_FAILURE
   fi
 
   pushd build/app
 
   if [ "$PLATFORM" == "Darwin" ]; then
     ./ProjectVentilatorGUI.app/Contents/MacOS/ProjectVentilatorGUI "${@:2}"
-    exit 0
+    exit $EXIT_SUCCESS
   fi
   if [ "$PLATFORM" == "Linux" ]; then
     ./ProjectVentilatorGUI "${@:2}"
-    exit 0
+    exit $EXIT_SUCCESS
   fi
   popd
 fi
 
 echo No valid options provided :\(
 print_help
-exit 1
+exit $EXIT_FAILURE
