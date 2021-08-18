@@ -82,27 +82,27 @@ class FrameDetector : public RxListener {
 
   void on_char_match_with_data() {
     switch (state_) {
-      case State::Lost:
-        // We have received something more before this marker.
-        // We assume this is the frame end marker, so we wait for start.
-        state_ = State::WaitForStartMarker;
-        restart_rx();
-        break;
-      case State::WaitForStartMarker:
-        // Received some junk while waiting for start marker but should have been just silence.
-        state_ = State::Lost;
-        restart_rx();
-        break;
-      case State::ReceivingFrame:
-        // Yes, we got data, thus we got the frame we can pass further.
-        process_received_data();
-        state_ = State::WaitForStartMarker;
-        restart_rx();
-        break;
-      default:
-        state_ = State::Lost;
-        restart_rx();
-        break;
+    case State::Lost:
+      // We have received something more before this marker.
+      // We assume this is the frame end marker, so we wait for start.
+      state_ = State::WaitForStartMarker;
+      restart_rx();
+      break;
+    case State::WaitForStartMarker:
+      // Received some junk while waiting for start marker but should have been just silence.
+      state_ = State::Lost;
+      restart_rx();
+      break;
+    case State::ReceivingFrame:
+      // Yes, we got data, thus we got the frame we can pass further.
+      process_received_data();
+      state_ = State::WaitForStartMarker;
+      restart_rx();
+      break;
+    default:
+      state_ = State::Lost;
+      restart_rx();
+      break;
     }
   }
 

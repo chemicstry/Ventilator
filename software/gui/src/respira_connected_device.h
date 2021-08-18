@@ -47,21 +47,19 @@ limitations under the License.
 
 // In Alpha Cycle controller transmits every 30ms, but sometimes it takes
 // longer, 42 being a safe bet
-constexpr DurationMs INTER_FRAME_TIMEOUT_MS = DurationMs(42);
+static constexpr DurationMs InterframeTimeout{DurationMs(42)};
 
 // GuiStatus is about 150 bytes, resulting in 13ms tx time. Output buffer
 // will usually swallow it immeadetely, but just in case we set a timeout.
-constexpr DurationMs WRITE_TIMEOUT_MS = DurationMs(15);
+static constexpr DurationMs WriteTimeout{DurationMs(15)};
 
 // Size of the rx buffer is set asuming a corner case where EVERY GuiStatus
 // byte and CRC32 will be escaped + two marker chars; this is too big, but
 // safe.
-static constexpr int RX_FRAME_LEN_MAX =
-    ProtoTraits<ControllerStatus>::MaxFrameSize;
+static constexpr uint32_t RxFrameLengthMax {ProtoTraits<ControllerStatus>::MaxFrameSize};
 
-static SoftRxBuffer<RX_FRAME_LEN_MAX> rx_buffer_(FramingMark);
-static FrameDetector<SoftRxBuffer<RX_FRAME_LEN_MAX>, RX_FRAME_LEN_MAX>
-    frame_detector_(rx_buffer_);
+static SoftRxBuffer<RxFrameLengthMax> rx_buffer_(FramingMark);
+static FrameDetector<SoftRxBuffer<RxFrameLengthMax>, RxFrameLengthMax> frame_detector_(rx_buffer_);
 
 class RespiraConnectedDevice : public ConnectedDevice {
 public:
@@ -100,8 +98,7 @@ public:
 
   bool SendGuiStatus(const GuiStatus &gui_status) override {
     if (!createPortMaybe()) {
-      CRIT("Could not open serial port for sending {}",
-           serialPortName_.toStdString());
+      CRIT("Could not open serial port for sending {}", serialPortName_.toStdString());
       // TODO Raise an Alert?
       return false;
     }
@@ -114,7 +111,7 @@ public:
       return false;
     }
 
-    if (!serialPort_->waitForBytesWritten(WRITE_TIMEOUT_MS.count())) {
+    if (!serialPort_->waitForBytesWritten(WriteTimeout.count())) {
       // TODO Raise an Alert?
       CRIT("Timeout while sending GuiStatus");
       return false;
@@ -122,20 +119,18 @@ public:
     return true;
   }
 
-  static constexpr auto DecodeControllerStatusFrame =
-      DecodeFrame<ControllerStatus>;
+  static constexpr auto DecodeControllerStatusFrame {DecodeFrame<ControllerStatus>};
 
   bool ReceiveControllerStatus(ControllerStatus *controller_status) override {
     qCritical() << "ReceiveControllerStatus";
     if (!createPortMaybe()) {
-      CRIT("Could not open serial port for reading {}",
-           serialPortName_.toStdString());
+      CRIT("Could not open serial port for reading {}", serialPortName_.toStdString());
       // TODO Raise an Alert?
       return false;
     }
 
     //    wait for incomming data
-    if (!serialPort_->waitForReadyRead(INTER_FRAME_TIMEOUT_MS.count())) {
+    if (!serialPort_->waitForReadyRead(InterframeTimeout.count())) {
       // TODO Raise an Alert?
       CRIT("Timeout while waiting for a serial frame from Cycle Controller");
       return false;
@@ -158,12 +153,10 @@ public:
       uint32_t len = frame_detector_.frame_length();
       CRIT("Got frame");
 
-      DecodeResult result =
-          DecodeControllerStatusFrame(buf, len, controller_status);
+      DecodeResult result = DecodeControllerStatusFrame(buf, len, controller_status);
 
       if (DecodeResult::Success != result) {
-        CRIT("Could not decode received data as a frame, error code: {}",
-             result);
+        CRIT("Could not decode received data as a frame, error code: {}", result);
         // TODO: Raise an Alert?
         return false;
       }
@@ -174,6 +167,6 @@ public:
   }
 
 private:
-  std::unique_ptr<QSerialPort> serialPort_ = nullptr;
+  std::unique_ptr<QSerialPort> serialPort_ {nullptr};
   QString serialPortName_;
 };

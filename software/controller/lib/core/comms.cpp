@@ -9,21 +9,16 @@
 #include "uart_dma_stream.h"
 #include <algorithm>
 
-//#include "debug.h"
-
-extern UartDma uart_dma;
-
-RxBufferUartDma<RX_FRAME_LEN_MAX> rx_buffer(uart_dma);
-FrameDetector<RxBufferUartDma<RX_FRAME_LEN_MAX>, RX_FRAME_LEN_MAX>
-    frame_detector(rx_buffer);
+RxBufferUartDma<RxFrameLengthMax> rx_buffer(uart_dma);
+FrameDetector<RxBufferUartDma<RxFrameLengthMax>, RxFrameLengthMax> frame_detector(rx_buffer);
 
 // Note that the initial value of last_tx has to be invalid; changing it to 0
 // wouldn't work.  We immediately transmit on boot, and after
-// we do that, we want to wait a full TX_INTERVAL_MS.  If we initialized
+// we do that, we want to wait a full kTxInterval.  If we initialized
 // last_tx to 0 and our first transmit happened at time millis() == 0, we
 // would set last_tx back to 0 and then retransmit immediately.
 bool Comms::is_time_to_transmit() {
-  return (last_tx == kInvalidTime || hal.Now() - last_tx > TX_INTERVAL);
+  return (last_tx_ == InvalidTime || hal.Now() - last_tx_ > TxInterval);
 }
 
 bool Comms::is_transmitting() { return uart_dma_.tx_in_progress(); }
@@ -37,7 +32,7 @@ void Comms::on_tx_error() {
 }
 
 DmaStream<(ControllerStatus_size + 2) * 2 + 2> dma_stream;
-static auto EncodeControllerStatusFrame = EncodeFrame<ControllerStatus>;
+static auto encode_conrtoller_status_frame = EncodeFrame<ControllerStatus>;
 
 void Comms::process_tx(const ControllerStatus &controller_status) {
   // Serialize our current state into the buffer if
@@ -50,19 +45,18 @@ void Comms::process_tx(const ControllerStatus &controller_status) {
   }
 
   hal.DisableInterrupts();
-  uint32_t frame_len =
-      EncodeControllerStatusFrame(controller_status, dma_stream);
+  auto frame_length = encode_conrtoller_status_frame(controller_status, dma_stream);
   hal.EnableInterrupts();
 
-  if (0 == frame_len) {
+  if (0 == frame_length) {
     // TODO log an error
     return;
   }
 
-  last_tx = hal.Now();
+  last_tx_ = hal.Now();
 }
 
-static auto DecodeGuiStatusFrame = DecodeFrame<GuiStatus>;
+static auto decode_gui_status_frame = DecodeFrame<GuiStatus>;
 
 void Comms::process_rx(GuiStatus *gui_status) {
   if (frame_detector_.frame_available()) {
@@ -70,10 +64,10 @@ void Comms::process_rx(GuiStatus *gui_status) {
     uint32_t len = frame_detector_.frame_length();
 
     GuiStatus new_gui_status = GuiStatus_init_zero;
-    DecodeResult result = DecodeGuiStatusFrame(buf, len, &new_gui_status);
+    auto result = decode_gui_status_frame(buf, len, &new_gui_status);
     if (DecodeResult::Success == result) {
       *gui_status = new_gui_status;
-      last_rx = hal.Now();
+      last_rx_ = hal.Now();
     }
   }
 }

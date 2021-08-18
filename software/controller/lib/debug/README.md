@@ -5,7 +5,7 @@ for system debugging.  This entire library can be compiled out of the
 production system. **#TODO** How?
 
 The interface can be accessed via a script located at
-[software/utils/controller_debug.sh](../../../utils/controller_debug.sh)
+[software/utils/debug.sh](../../../utils/debug.sh)
 
 There is also a [brief tutorial](../../../utils/debug) on how to use it.
 

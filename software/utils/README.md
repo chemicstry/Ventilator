@@ -8,9 +8,9 @@ into the ventilator unit.
 
 Scripts for doing so are available under [rpi_config](rpi_config).
 
-## controller_debug
+## Debug interface
 
-[controller_debug.sh](controller_debug.sh)
+[debug.sh](debug.sh)
 
 This is a convenience link to the controller debug interface.
 
@@ -19,9 +19,9 @@ This Python script can be used to interface with the controller via the virtual 
 There is a brief tutorial on how to use it right next to the python code in the
 [/debug](debug) subdirectory.
 
-## decoder
+## Controller frame decoder
 
-[decoder.py](decoder.py)
+[decoder.py](controller_frame_decoder.py)
 
 This is a decoder of serial packets sent from controller to GUI.
 

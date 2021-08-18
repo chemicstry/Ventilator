@@ -1,7 +1,7 @@
 # Debug serial interface
 
 [debug_cli.py](debug_cli.py) which can also be run from shortcut at
-[software/utils/controller_debug.sh](../controller_debug.sh)
+[software/utils/debug.sh](../debug.sh)
 
 This Python script can be used to interface with the controller via the virtual serial port that is created when you plug a USB cable into the controller's debug port. The command line interface allows you to examine and directly manipulate a number of low level variables, as well as run calibration routines and automated performance tests.
 

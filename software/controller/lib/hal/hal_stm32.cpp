@@ -582,10 +582,10 @@ class UART {
 };
 
 static UART debug_uart(Uart2Base);
-static constexpr uint8_t txCh{1};
-static constexpr uint8_t rxCh{2};
-UartDma uart_dma(Uart3Base, Dma1Base, txCh, rxCh, FramingMark);
-DmaCtrl dmaController(Dma1Base);
+static constexpr uint8_t TxChannel{1};
+static constexpr uint8_t RxChannel{2};
+UartDma uart_dma(Uart3Base, Dma1Base, TxChannel, RxChannel, FramingMark);
+DmaCtrl dma_conmtroller(Dma1Base);
 
 // The UART that talks to the rPi uses the following pins:
 //    PB10 - TX
@@ -621,7 +621,7 @@ void HalApi::InitUARTs() {
   GpioPinAltFunc(GpioBBase, 14, 7);
 
   uart_dma.init(115200);
-  dmaController.init();
+  dma_conmtroller.init();
   debug_uart.Init(115200);
 
   EnableInterrupt(InterruptVector::Dma1Channel2, IntPriority::Standard);
