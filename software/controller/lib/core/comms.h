@@ -47,7 +47,7 @@ class Comms : public TxListener {
       &frame_detector_;
 
 public:
-  Comms() : uart_dma_(uart_dma), frame_detector_(frame_detector){}
+  Comms() : uart_dma_(uart_dma), frame_detector_(frame_detector) {}
   // Returns true on successfull initialization, false otherwise
   [[nodiscard]] bool init();
   void on_tx_complete() override;

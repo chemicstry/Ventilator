@@ -1,6 +1,5 @@
 #include "comms.h"
 
-#include <algorithm>
 #include "checksum.h"
 #include "frame_detector.h"
 #include "framing.h"
@@ -8,6 +7,7 @@
 #include "network_protocol.pb.h"
 #include "uart_dma.h"
 #include "uart_dma_stream.h"
+#include <algorithm>
 
 //#include "debug.h"
 

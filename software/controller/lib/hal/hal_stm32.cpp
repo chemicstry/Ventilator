@@ -33,10 +33,10 @@ Abbreviations [RM], [DS], etc are defined in hal/README.md.
 
 #include "checksum.h"
 #include "circular_buffer.h"
+#include "framing_spec_chars.h"
 #include "hal.h"
 #include "stepper.h"
 #include "uart_dma.h"
-#include "framing_spec_chars.h"
 #include "vars.h"
 
 #define SYSTEM_STACK_SIZE 2500
@@ -796,32 +796,32 @@ __attribute__((used)) __attribute__((section(".isr_vector"))) void (*const Vecto
 
     // The rest of the table is a list of exception and interrupt handlers.
     // [RM] chapter 12 (NVIC) gives a listing of the vector table offsets.
-    NMI,           //   2 - 0x008 The NMI handler
-    FaultISR,      //   3 - 0x00C The hard fault handler
-    MPUFaultISR,   //   4 - 0x010 The MPU fault handler
-    BusFaultISR,   //   5 - 0x014 The bus fault handler
-    UsageFaultISR, //   6 - 0x018 The usage fault handler
-    BadISR,        //   7 - 0x01C Reserved
-    BadISR,        //   8 - 0x020 Reserved
-    BadISR,        //   9 - 0x024 Reserved
-    BadISR,        //  10 - 0x028 Reserved
-    BadISR,        //  11 - 0x02C SVCall handler
-    BadISR,        //  12 - 0x030 Debug monitor handler
-    BadISR,        //  13 - 0x034 Reserved
-    BadISR,        //  14 - 0x038 The PendSV handler
-    BadISR,        //  15 - 0x03C SysTick
-    BadISR,        //  16 - 0x040
-    BadISR,        //  17 - 0x044
-    BadISR,        //  18 - 0x048
-    BadISR,        //  19 - 0x04C
-    BadISR,        //  20 - 0x050
-    BadISR,        //  21 - 0x054
-    BadISR,        //  22 - 0x058
-    BadISR,        //  23 - 0x05C
-    BadISR,        //  24 - 0x060
-    BadISR,        //  25 - 0x064
-    BadISR,        //  26 - 0x068
-    BadISR,        //  27 - 0x06C
+    NMI,             //   2 - 0x008 The NMI handler
+    FaultISR,        //   3 - 0x00C The hard fault handler
+    MPUFaultISR,     //   4 - 0x010 The MPU fault handler
+    BusFaultISR,     //   5 - 0x014 The bus fault handler
+    UsageFaultISR,   //   6 - 0x018 The usage fault handler
+    BadISR,          //   7 - 0x01C Reserved
+    BadISR,          //   8 - 0x020 Reserved
+    BadISR,          //   9 - 0x024 Reserved
+    BadISR,          //  10 - 0x028 Reserved
+    BadISR,          //  11 - 0x02C SVCall handler
+    BadISR,          //  12 - 0x030 Debug monitor handler
+    BadISR,          //  13 - 0x034 Reserved
+    BadISR,          //  14 - 0x038 The PendSV handler
+    BadISR,          //  15 - 0x03C SysTick
+    BadISR,          //  16 - 0x040
+    BadISR,          //  17 - 0x044
+    BadISR,          //  18 - 0x048
+    BadISR,          //  19 - 0x04C
+    BadISR,          //  20 - 0x050
+    BadISR,          //  21 - 0x054
+    BadISR,          //  22 - 0x058
+    BadISR,          //  23 - 0x05C
+    BadISR,          //  24 - 0x060
+    BadISR,          //  25 - 0x064
+    BadISR,          //  26 - 0x068
+    BadISR,          //  27 - 0x06C
     DMA1Channel2ISR, //  28 - 0x070 DMA1 CH2
     DMA1Channel3ISR, //  29 - 0x074 DMA1 CH3
     BadISR,          //  30 - 0x078
