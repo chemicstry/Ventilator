@@ -1,5 +1,7 @@
 #include "comms.h"
 
+#include <algorithm>
+
 #include "checksum.h"
 #include "frame_detector.h"
 #include "framing.h"
@@ -7,7 +9,6 @@
 #include "network_protocol.pb.h"
 #include "uart_dma.h"
 #include "uart_dma_stream.h"
-#include <algorithm>
 
 RxBufferUartDma<RxFrameLengthMax> rx_buffer(uart_dma);
 FrameDetector<RxBufferUartDma<RxFrameLengthMax>, RxFrameLengthMax> frame_detector(rx_buffer);
@@ -74,8 +75,7 @@ void Comms::process_rx(GuiStatus *gui_status) {
 
 bool Comms::init() { return frame_detector_.begin(); }
 
-void Comms::handler(const ControllerStatus &controller_status,
-                    GuiStatus *gui_status) {
+void Comms::handler(const ControllerStatus &controller_status, GuiStatus *gui_status) {
   process_tx(controller_status);
   process_rx(gui_status);
 }

@@ -14,6 +14,10 @@ limitations under the License.
 
 */
 
+#include <QDataStream>
+#include <QSerialPort>
+#include <memory>
+
 #include "checksum.h"
 #include "chrono.h"
 #include "connected_device.h"
@@ -27,9 +31,6 @@ limitations under the License.
 #include "proto_traits.h"
 #include "qserial_output_stream.h"
 #include "soft_rx_buffer.h"
-#include <QDataStream>
-#include <QSerialPort>
-#include <memory>
 
 // Connects to system serial port, does nanopb serialization/deserialization
 // of GuiStatus and ControllerStatus and provides methods to send/receive
@@ -56,13 +57,13 @@ static constexpr DurationMs WriteTimeout{DurationMs(15)};
 // Size of the rx buffer is set asuming a corner case where EVERY GuiStatus
 // byte and CRC32 will be escaped + two marker chars; this is too big, but
 // safe.
-static constexpr uint32_t RxFrameLengthMax {ProtoTraits<ControllerStatus>::MaxFrameSize};
+static constexpr uint32_t RxFrameLengthMax{ProtoTraits<ControllerStatus>::MaxFrameSize};
 
 static SoftRxBuffer<RxFrameLengthMax> rx_buffer_(FramingMark);
 static FrameDetector<SoftRxBuffer<RxFrameLengthMax>, RxFrameLengthMax> frame_detector_(rx_buffer_);
 
 class RespiraConnectedDevice : public ConnectedDevice {
-public:
+ public:
   RespiraConnectedDevice(QString portName) : serialPortName_(portName) {}
 
   ~RespiraConnectedDevice() {
@@ -74,8 +75,7 @@ public:
   // Creates the QSerialPort in the current thread context.
   // We can't provide it from outside context because of Qt mechanisms.
   bool createPortMaybe() {
-    if (serialPort_ != nullptr)
-      return true;
+    if (serialPort_ != nullptr) return true;
 
     serialPort_ = std::make_unique<QSerialPort>();
     serialPort_->setPortName(serialPortName_);
@@ -119,7 +119,7 @@ public:
     return true;
   }
 
-  static constexpr auto DecodeControllerStatusFrame {DecodeFrame<ControllerStatus>};
+  static constexpr auto DecodeControllerStatusFrame{DecodeFrame<ControllerStatus>};
 
   bool ReceiveControllerStatus(ControllerStatus *controller_status) override {
     qCritical() << "ReceiveControllerStatus";
@@ -166,7 +166,7 @@ public:
     return true;
   }
 
-private:
-  std::unique_ptr<QSerialPort> serialPort_ {nullptr};
+ private:
+  std::unique_ptr<QSerialPort> serialPort_{nullptr};
   QString serialPortName_;
 };

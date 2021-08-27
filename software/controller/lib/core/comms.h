@@ -30,7 +30,7 @@ limitations under the License.
 // Size of the rx buffer is set assuming a corner case where EVERY GuiStatus
 // byte and CRC32 will be escaped + two marker chars; this is too big, but
 // safe.
-static constexpr uint32_t RxFrameLengthMax {ProtoTraits<GuiStatus>::MaxFrameSize};
+static constexpr uint32_t RxFrameLengthMax{ProtoTraits<GuiStatus>::MaxFrameSize};
 
 extern UartDma uart_dma;
 
@@ -41,7 +41,7 @@ class Comms : public TxListener {
   UartDma &uart_dma_;
   FrameDetector<RxBufferUartDma<RxFrameLengthMax>, RxFrameLengthMax> &frame_detector_;
 
-public:
+ public:
   Comms() : uart_dma_(uart_dma), frame_detector_(frame_detector) {}
   // Returns true on successful initialization, false otherwise
   [[nodiscard]] bool init();
@@ -52,7 +52,7 @@ public:
   // gui_status accordingly.
   void handler(const ControllerStatus &controller_status, GuiStatus *gui_status);
 
-private:
+ private:
   bool is_time_to_transmit();
   bool is_transmitting();
   void process_tx(const ControllerStatus &controller_status);
@@ -66,14 +66,14 @@ private:
   // Size of the buffer is set assuming a corner case where EVERY
   // ControllerStatus byte and CRC32 will be escaped + two marker chars; this is
   // too big, but safe.
-  static constexpr uint32_t TxBufferLength {ProtoTraits<ControllerStatus>::MaxFrameSize};
+  static constexpr uint32_t TxBufferLength{ProtoTraits<ControllerStatus>::MaxFrameSize};
   uint8_t tx_buffer_[TxBufferLength] = {0};
 
   // Time when we started sending the last ControllerStatus.
   // TODO: Change this to std::optional<Time> once that's available; then we
   // don't need this "clever" initialization.
-  static constexpr Time InvalidTime {microsSinceStartup(0xFFFF'FFFF'FFFF'FFFFUL)};
-  Time last_tx_ {InvalidTime};
+  static constexpr Time InvalidTime{microsSinceStartup(0xFFFF'FFFF'FFFF'FFFFUL)};
+  Time last_tx_{InvalidTime};
 
   // Our incoming (serialized) GuiStatus proto is incrementally buffered in
   // rx_buffer until it's complete, and we can deserialize it to a proto

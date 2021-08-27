@@ -7,11 +7,11 @@
 #include "checksum.h"
 #include "frame_detector.h"
 #include "framing_streams.h"
+#include "gtest/gtest.h"
 #include "hal.h"
 #include "network_protocol.pb.h"
 #include "proto_traits.h"
 #include "units.h"
-#include "gtest/gtest.h"
 
 uint8_t tx_buffer[ProtoTraits<ControllerStatus>::MaxFrameSize];
 uint32_t tx_length = 0;
@@ -27,14 +27,13 @@ bool UartDma::start_tx(uint8_t *buf, uint32_t length, TxListener *txl) {
   return true;
 };
 
-void UartDma::stop_tx(){}
-void UartDma::stop_rx(){}
-void UartDma::enable_character_match(){}
+void UartDma::stop_tx() {}
+void UartDma::stop_rx() {}
+void UartDma::enable_character_match() {}
 
 UartDma uart_dma;
 
-uint32_t UnescapeFrame(uint8_t *source, uint32_t sourceLength, uint8_t *dest,
-                       uint32_t destLength);
+uint32_t UnescapeFrame(uint8_t *source, uint32_t sourceLength, uint8_t *dest, uint32_t destLength);
 
 TEST(CommTests, SendControllerStatus) {
   Comms comms;
@@ -60,14 +59,14 @@ TEST(CommTests, SendControllerStatus) {
   }
 
   uint8_t decoded_buf[ControllerStatus_size + 4];
-  uint32_t decoded_length = UnescapeFrame(tx_buffer, tx_length, decoded_buf,
-                                          ControllerStatus_size + 4);
+  uint32_t decoded_length =
+      UnescapeFrame(tx_buffer, tx_length, decoded_buf, ControllerStatus_size + 4);
   printf("Decoded len: %d\n", decoded_length);
   EXPECT_TRUE(crc_ok(decoded_buf, decoded_length));
   ASSERT_GT(decoded_length, static_cast<uint32_t>(0));
 
-  pb_istream_t stream = pb_istream_from_buffer(
-      reinterpret_cast<unsigned char *>(decoded_buf), decoded_length - 4);
+  pb_istream_t stream =
+      pb_istream_from_buffer(reinterpret_cast<unsigned char *>(decoded_buf), decoded_length - 4);
 
   ControllerStatus sent = ControllerStatus_init_zero;
   ASSERT_TRUE(pb_decode(&stream, ControllerStatus_fields, &sent));
@@ -102,12 +101,9 @@ void fake_rx(uint32_t encoded_length) {
   rx_listener->on_rx_complete();
 }
 
-static bool shouldEscape(uint8_t b) {
-  return FramingMark == b || FramingEscape == b;
-}
+static bool shouldEscape(uint8_t b) { return FramingMark == b || FramingEscape == b; }
 
-uint32_t EscapeFrame(uint8_t *source, uint32_t sourceLength, uint8_t *dest,
-                     uint32_t destLength) {
+uint32_t EscapeFrame(uint8_t *source, uint32_t sourceLength, uint8_t *dest, uint32_t destLength) {
   uint32_t i = 0;
   dest[i++] = FramingMark;
   for (uint32_t j = 0; j < sourceLength; j++) {
@@ -126,8 +122,7 @@ uint32_t EscapeFrame(uint8_t *source, uint32_t sourceLength, uint8_t *dest,
 }
 
 // Adds CRC of the dataLength of data bytes in the buf at the end of the buf
-bool append_crc(uint8_t *buf, uint32_t dataLength, uint32_t bufLength,
-                uint32_t crc32) {
+bool append_crc(uint8_t *buf, uint32_t dataLength, uint32_t bufLength, uint32_t crc32) {
   if (dataLength + 4 > bufLength) {
     return false;
   }
@@ -159,8 +154,7 @@ TEST(CommTests, CommandRx) {
   uint32_t crc32 = soft_crc32(pb_buf, reinterpret_cast<uint32_t>(len));
   bool crc_appened = append_crc(pb_buf, len, GuiStatus_size + 4, crc32);
   EXPECT_TRUE(crc_appened);
-  uint32_t encoded_length =
-      EscapeFrame(pb_buf, len + 4, fake_frame, sizeof(fake_frame));
+  uint32_t encoded_length = EscapeFrame(pb_buf, len + 4, fake_frame, sizeof(fake_frame));
   EXPECT_GT(encoded_length, (uint32_t)0);
 
   ControllerStatus controller_status_ignored = ControllerStatus_init_zero;
