@@ -22,7 +22,7 @@ limitations under the License.
 
 static constexpr int32_t EndOfStream{-1};
 
-// \todo ensure this behaves as flags, add tests
+// \todo ensure this behaves like flags, add tests
 enum class ResponseFlags {
   StreamSuccess = 0,
   WarningBufferFull = 1,

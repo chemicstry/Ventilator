@@ -21,18 +21,18 @@ extern UartDma uart_dma;
 // Maintains a double buffer that is assigned to DMA for transmission over UART.
 // One buffer is read by DMA and the other is written by software.
 // DMA transmission will be triggered and buffers exchanged when:
-// * buffer is full or
-// * EndOfStream is received
+//  * buffer is full or
+//  * EndOfStream is received
 // Transmissions are scheduled to re-trigger if there is an ongoing DMA transmission.
-// That is done by interrupt from UartDma driver.
+// This is done by interrupt from UartDma driver.
 //
 // Returns flags:
-// * ErrorStreamBroken if DMA error interrupt detected
-// * ErrorBufferFull if an attempt was made to write to stream while all buffers were full
-// * WarningBufferFull if the buffer became full after the last char written
-// * StreamSuccess if there is space available in buffers after the char is written
+//  * ErrorStreamBroken if DMA error interrupt detected
+//  * ErrorBufferFull if an attempt was made to write to stream while all buffers were full
+//  * WarningBufferFull if the buffer became full after the last char written
+//  * StreamSuccess if there is space available in buffers after the char is written
 
-template <int BufferLength>
+template <uint32_t BufferLength>
 class DmaStream : public OutputStream, public TxListener {
  public:
   StreamResponse put(int32_t b) override {
