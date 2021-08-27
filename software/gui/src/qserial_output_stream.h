@@ -11,7 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
 */
 
 #pragma once
@@ -21,8 +20,6 @@ limitations under the License.
 #include "framing_streams.h"
 
 class QSerialOutputStream : public OutputStream {
-  std::unique_ptr<QSerialPort> &port_;
-
  public:
   QSerialOutputStream(std::unique_ptr<QSerialPort> &port) : port_(port) {}
 
@@ -31,9 +28,12 @@ class QSerialOutputStream : public OutputStream {
 
   StreamResponse put(int32_t b) override {
     if (EndOfStream == b) {
-      return {.count_written = 0, .flags = StreamSuccess};
+      return {.count_written = 0, .flags = ResponseFlags::StreamSuccess};
     }
     port_->putChar(static_cast<uint8_t>(b));
-    return {.count_written = 0, .flags = StreamSuccess};
+    return {.count_written = 0, .flags = ResponseFlags::StreamSuccess};
   }
+
+ private:
+  std::unique_ptr<QSerialPort> &port_;
 };

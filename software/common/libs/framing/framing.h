@@ -110,7 +110,7 @@ uint32_t EncodeFrame(const PbType &pb_object, OutputStream &output_stream) {
   CrcStream crc_stream(esc_stream);
 
   if (EncodedLength<PbType>(pb_buffer, pb_length) > output_stream.bytes_available_for_write()) {
-    // We won't be able to fit in the whole frame this time and we don't want any partial writes
+    // We won't be able to fit in the whole frame this time, and we don't want any partial writes
     return 0;
   }
 
