@@ -620,7 +620,7 @@ void HalApi::InitUARTs() {
   GpioPinAltFunc(GpioBBase, 14, 7);
 
 #ifdef UART_VIA_DMA
-  dma_uart.Init(115200);
+  dma_uart.init(115200);
 #else
   rpi_uart.Init(115200);
 #endif
