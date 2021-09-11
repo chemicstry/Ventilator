@@ -86,46 +86,59 @@ TEST(DebugVar, DebugVarFloatDefaults) {
 TEST(DebugVar, FloatArray) {
   FloatArray<3> fa3("fa3", Access::ReadWrite, "units");
   EXPECT_EQ(fa3.byte_size(), 4 * 3);
-  fa3.data[0] = 24.0f;
-  fa3.data[1] = 42.0f;
-  fa3.data[2] = 69.0f;
+  fa3.set_data(0, 24.0f);
+  fa3.set_data(1, 42.0f);
+  fa3.set_data(2, 69.0f);
   std::array<float, 3> compare_to{24.0f, 42.0f, 69.0f};
 
-  EXPECT_EQ(fa3.data, compare_to);
+  for (size_t i = 0; i < fa3.size(); ++i) EXPECT_FLOAT_EQ(fa3.data(i), compare_to[i]);
 
   uint32_t buffer[3 * 4];
+
   fa3.serialize_value(buffer);
-  fa3.data = {0};
+
+  for (size_t i = 0; i < fa3.size(); ++i) {
+    EXPECT_EQ(fa3.data(i), reinterpret_cast<float*>(&buffer)[i]);
+    // reset to 0 in preparation for next step
+    fa3.set_data(i, 0);
+    // while we are at it, check that the copies were by value
+    EXPECT_EQ(compare_to[i], reinterpret_cast<float*>(&buffer)[i]);
+  }
+
   fa3.deserialize_value(buffer);
-  EXPECT_EQ(fa3.data, compare_to);
-  EXPECT_NE(fa3.data.data(), compare_to.data());
-  EXPECT_NE(reinterpret_cast<void*>(fa3.data.data()), reinterpret_cast<void*>(buffer));
+
+  for (size_t i = 0; i < fa3.size(); ++i) {
+    EXPECT_EQ(fa3.data(i), compare_to[i]);
+    // also check that the copies were by value
+    fa3.set_data(i, 0);
+    EXPECT_EQ(compare_to[i], reinterpret_cast<float*>(&buffer)[i]);
+  }
 
   FloatArray<5> fa5("fa5", Access::ReadWrite, 4.0f, "units");
-  EXPECT_EQ(fa5.data[4], 4.0f);
+  EXPECT_EQ(fa5.data(4), 4.0f);
 
   FloatArray<2> fa2("fa2", Access::ReadWrite, {1.0f, 2.0f}, "units");
-  EXPECT_EQ(fa2.data[0], 1.0f);
-  EXPECT_EQ(fa2.data[1], 2.0f);
+  EXPECT_EQ(fa2.data(0), 1.0f);
+  EXPECT_EQ(fa2.data(1), 2.0f);
 }
 
 TEST(DebugVar, String) {
   String<3> s3("fa3", Access::ReadOnly);
   EXPECT_EQ(s3.byte_size(), 3);
-  s3.data[0] = 'a';
-  s3.data[1] = 'b';
-  s3.data[2] = 'c';
+  s3.set("abc", 3);
   std::array<char, 3> compare_to{'a', 'b', 'c'};
 
-  EXPECT_EQ(s3.data, compare_to);
+  for (size_t i = 0; i < s3.byte_size(); ++i) EXPECT_EQ(s3.data(i), compare_to[i]);
 
   char str1[] = "love";
   char str2[] = "hate";
   String<5> s4("fa3", Access::ReadOnly, str1, sizeof(str1));
-  EXPECT_STREQ(str1, s4.get());
+  EXPECT_EQ(s4.byte_size(), sizeof(str1));
+  for (size_t i = 0; i < s4.byte_size(); ++i) EXPECT_EQ(s4.data(i), str1[i]);
 
   s4.set(str2, sizeof(str2));
-  EXPECT_STREQ(str2, s4.get());
+  EXPECT_EQ(s4.byte_size(), sizeof(str2));
+  for (size_t i = 0; i < s4.byte_size(); ++i) EXPECT_EQ(s4.data(i), str2[i]);
 
   DEBUG_STRING(str_auto, "str_auto", Access::ReadOnly, "auto", "auto help");
   EXPECT_EQ(8, str_auto.byte_size());

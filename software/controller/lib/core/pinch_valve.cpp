@@ -177,17 +177,17 @@ void PinchValve::SetOutput(float value) {
   value = std::clamp(value, 0.0f, 1.0f);
 
   // Number of intervals defined by the table.
-  float tbl_len = static_cast<float>(calibration_.data.size() - 1);
+  float tbl_len = static_cast<float>(calibration_.size() - 1);
 
   // Convert the input value based on a table
   // used to linearize the pinch valve output
-  int n = static_cast<int>(value * tbl_len);
+  size_t n = static_cast<size_t>(value * tbl_len);
   float f = value * tbl_len - static_cast<float>(n);
 
-  if (n == static_cast<int>(tbl_len))
-    value = calibration_.data[n];
+  if (n > calibration_.size())
+    value = calibration_.data(n);
   else
-    value = calibration_.data[n] + f * (calibration_.data[n + 1] - calibration_.data[n]);
+    value = calibration_.data(n) + f * (calibration_.data(n + 1) - calibration_.data(n));
 
   // Convert the value to an absolute position in deg
   // The motor's zero position is at the home offset

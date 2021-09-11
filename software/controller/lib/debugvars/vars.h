@@ -125,24 +125,34 @@ class FloatArray : public Base {
   FloatArray(const char *name, Access access, float initial_fill, const char *units,
              const char *help = "", const char *fmt = "%.3f")
       : Base(Type::FloatArray, name, access, units, help, fmt) {
-    data.fill(initial_fill);
+    data_.fill(initial_fill);
   }
 
   FloatArray(const char *name, Access access, std::array<float, N> initial, const char *units,
              const char *help = "", const char *fmt = "%.3f")
-      : Base(Type::FloatArray, name, access, units, help, fmt), data(initial) {}
+      : Base(Type::FloatArray, name, access, units, help, fmt), data_(initial) {}
 
+  // Caller must ensure write_buff is at least as big as the array
   void serialize_value(void *write_buff) override {
-    std::memcpy(write_buff, data.data(), byte_size());
+    std::memcpy(write_buff, data_.data(), byte_size());
   }
 
+  // Caller must ensure read_buff is at least as big as the array
   void deserialize_value(const void *read_buf) override {
-    std::memcpy(data.data(), read_buf, byte_size());
+    std::memcpy(data_.data(), read_buf, byte_size());
   }
 
   size_t byte_size() const override { return 4 * N; }
 
-  std::array<float, N> data;
+  float data(const size_t index) const { return index < N ? data_[index] : 0.0f; }
+  size_t size() const { return data_.size(); }
+
+  void set_data(const size_t index, const float value) {
+    if (index < N) data_[index] = value;
+  }
+
+ private:
+  std::array<float, N> data_;
 };
 
 template <size_t N>
@@ -159,23 +169,26 @@ class String : public Base {
   }
 
   void serialize_value(void *write_buff) override {
-    std::memcpy(write_buff, data.data(), byte_size());
+    std::memcpy(write_buff, data_.data(), byte_size());
   }
 
   void deserialize_value(const void *read_buf) override {
-    std::memcpy(data.data(), read_buf, byte_size());
+    std::memcpy(data_.data(), read_buf, byte_size());
   }
 
   size_t byte_size() const override { return N; }
 
   void set(const char *new_value, size_t size) {
     size = std::min(size, N);
-    std::memcpy(data.data(), new_value, size);
+    std::memcpy(data_.data(), new_value, size);
   }
 
-  const char *get() const { return data.data(); }
+  const char *get() const { return data_.data(); }
 
-  std::array<char, N> data = {0};
+  char data(const size_t index) const { return index < N ? data_[index] : '\0'; }
+
+ private:
+  std::array<char, N> data_ = {0};
 };
 
 // \TODO nasty math because handler assumes 32-bit types with endian conversion
