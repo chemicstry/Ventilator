@@ -17,8 +17,9 @@
 #endif
 
 #if !defined(FLATBUFFERS_ASSERT)
-#include <assert.h>
-#define FLATBUFFERS_ASSERT assert
+//#include <assert.h>
+#define fassert(condition) ((void)0)
+#define FLATBUFFERS_ASSERT fassert
 #elif defined(FLATBUFFERS_ASSERT_INCLUDE)
 // Include file with forward declaration
 #include FLATBUFFERS_ASSERT_INCLUDE
